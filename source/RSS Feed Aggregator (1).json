@@ -1,0 +1,230 @@
+{
+  "name": "RSS Feed Aggregator",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        }
+      },
+      "id": "fdb4cc6d-966b-4573-9d4b-58c51e84984c",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://hnrss.org/frontpage",
+        "options": {}
+      },
+      "id": "ac79ed32-ed21-40fd-8d6f-56d9858bd70a",
+      "name": "Hacker News RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        16,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://feeds.bbci.co.uk/news/rss.xml",
+        "options": {}
+      },
+      "id": "97779f1d-d8b8-4942-b200-2c007694e703",
+      "name": "BBC News RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        16,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "title",
+              "value": "={{$json[\"title\"]}}"
+            },
+            {
+              "name": "link",
+              "value": "={{$json[\"link\"]}}"
+            },
+            {
+              "name": "date",
+              "value": "={{$json[\"isoDate\"] || $json[\"pubDate\"]}}"
+            },
+            {
+              "name": "source",
+              "value": "Hacker News"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5baea92a-e8b7-4d28-9c1d-0fb9cff8891d",
+      "name": "Normalize HN",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        240,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "title",
+              "value": "={{$json[\"title\"]}}"
+            },
+            {
+              "name": "link",
+              "value": "={{$json[\"link\"]}}"
+            },
+            {
+              "name": "date",
+              "value": "={{$json[\"isoDate\"] || $json[\"pubDate\"]}}"
+            },
+            {
+              "name": "source",
+              "value": "BBC News"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "514f7358-2ad9-4b14-bb49-f6e170bcf7fc",
+      "name": "Normalize BBC",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        240,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d49b9c15-c545-48d7-8b01-1a18491bf47a",
+      "name": "Merge HN + BBC",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        464,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const seen = new Set();\nconst unique = items.filter(item => {\n  if (seen.has(item.json.link)) return false;\n  seen.add(item.json.link);\n  return true;\n});\n\nreturn unique.sort((a, b) => {\n  return new Date(b.json.date) - new Date(a.json.date);\n});"
+      },
+      "id": "29aa1226-b5d9-4b88-9ca3-5c916d4621c2",
+      "name": "Sort & Deduplicate",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        688,
+        224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Hacker News RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "BBC News RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hacker News RSS": {
+      "main": [
+        [
+          {
+            "node": "Normalize HN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BBC News RSS": {
+      "main": [
+        [
+          {
+            "node": "Normalize BBC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize HN": {
+      "main": [
+        [
+          {
+            "node": "Merge HN + BBC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize BBC": {
+      "main": [
+        [
+          {
+            "node": "Merge HN + BBC",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge HN + BBC": {
+      "main": [
+        [
+          {
+            "node": "Sort & Deduplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "35a5e92e-80f7-4de3-87bf-9949643687d7",
+  "meta": {
+    "instanceId": "5387d2a75d8c883718234cdd60176366d2f86c5f7c232342382889c9ae01165e"
+  },
+  "nodeGroups": [],
+  "id": "g3kx3UGlBdrEH6pV",
+  "tags": []
+}
